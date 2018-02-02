@@ -6,8 +6,22 @@ import com.danielasfregola.tutorial.cat._
 
 object ApplicativeInstances {
 
-  implicit val maybeApplicative: Applicative[Maybe] = ???
+  implicit val maybeApplicative: Applicative[Maybe] = new Applicative[Maybe] {
+    override def pure[A](a: A): Maybe[A] = Just(a)
 
-  implicit val zeroOrMoreApplicative: Applicative[ZeroOrMore] = ???
+    override def ap[A, B](boxF: Maybe[A => B])(boxA: Maybe[A]): Maybe[B] = (boxF, boxA) match {
+      case (Just(f), Just(a)) => Just(f(a))
+      case _ => Empty
+    }
+  }
+
+  implicit val zeroOrMoreApplicative: Applicative[ZeroOrMore] = new Applicative[ZeroOrMore] {
+    override def pure[A](a: A): ZeroOrMore[A] = OneOrMore(a, Zero)
+
+    override def ap[A, B](boxF: ZeroOrMore[A => B])(boxA: ZeroOrMore[A]): ZeroOrMore[B] = (boxF, boxA) match {
+      case (OneOrMore(hf, _), OneOrMore(a, as)) => OneOrMore(hf(a), ap(boxF)(as))
+      case _ => Zero
+    }
+  }
 
 }
